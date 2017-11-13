@@ -35,9 +35,10 @@ public class Controller {
     private Mode currentMode = Mode.Walk;
     private SubMode subMode;
     private DpadDirection direction;
+    private static final String PACKET_CHARSET = "UTF-8";
 
     public Controller() throws UnsupportedEncodingException {
-        if (Charset.isSupported("UTF-8")) {
+        if (Charset.isSupported(PACKET_CHARSET)) {
             throw new UnsupportedEncodingException("UTF-8 encoding isn't supported");
         }
     }
@@ -76,7 +77,7 @@ public class Controller {
 
         ArrayList<Byte> packet = new ArrayList<>();
 
-        for (Byte b : packetHeader.getBytes("UTF-8")) {
+        for (Byte b : packetHeader.getBytes(PACKET_CHARSET)) {
             packet.add(b);
         }
 
