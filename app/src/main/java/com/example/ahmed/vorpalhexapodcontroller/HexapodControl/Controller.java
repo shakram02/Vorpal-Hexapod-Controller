@@ -1,49 +1,16 @@
 package com.example.ahmed.vorpalhexapodcontroller.HexapodControl;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-
-/**
- * Created by ahmed on 11/12/17.
- * <p>
- * Sends the robot commands based on the specs.
- * <p>
- * A 3-byte gamepad function specification, which consists of:
- * A mode letter: W, D, or F
- * A mode number: the literal characters 1, 2, 3, or 4
- * A DPAD letter: f, b, l, r, s, w.
- * For example, W2f which means that the function to execute is walk mode 2 with
- * the forward DPAD button pressed. As such, this type of command always starts
- * with a literal character of W, D, or F.
- * <p>
- * A 4-byte leg motion command. This command consists of:
- * The literal character L.
- * The next byte is the leg selection mask, which has one bit for each leg that is affected
- * by the command. The low bit is leg 0, the next higher bit is leg 1, etc.
- * A 1-byte bitmaks of flags. Currently, the flags may take the numeric value 0 or 1,
- * where 0 means no flags and 1 means that hip motions should be mirrored on the left and
- * right sides of the robot (useful for most types of walking).
- * <p>
- * The hip position value, from 0 to 179, followed by the knee value, from 0 to 179.
- * For either the hip or knee position, the special value 255 means no movement is required.
- * This allows the leg motion command to move just the hips or just the knees.
- * There may be several of these concatenated in order to move different groups of legs
- * to different positions in a single packet.
- */
 public class Controller {
-    private Mode currentMode = Mode.Walk;
+    private Mode currentMode;
     private SubMode subMode;
     private DpadDirection direction;
-    private static final String PACKET_CHARSET = "UTF-8";
 
-    public Controller() throws UnsupportedEncodingException {
-        if (Charset.isSupported(PACKET_CHARSET)) {
-            throw new UnsupportedEncodingException("UTF-8 encoding isn't supported");
-        }
+    public Controller() {
+        subMode = SubMode.One;
+        currentMode = Mode.Walk;
+        direction = DpadDirection.Stop;
     }
 
-    private static final String packetHeader = "V1";
 
     public Mode getCurrentMode() {
         return currentMode;
@@ -70,31 +37,10 @@ public class Controller {
     }
 
 
-    public Byte[] getPacket() throws UnsupportedEncodingException {
-        String payload = this.currentMode.toString()
-                + this.subMode.toString()
-                + this.direction.toString();
-
-        ArrayList<Byte> packet = new ArrayList<>();
-
-        for (Byte b : packetHeader.getBytes(PACKET_CHARSET)) {
-            packet.add(b);
-        }
-
-        packet.add(((byte) payload.length()));
-
-        for (Byte b : payload.getBytes()) {
-            packet.add(b);
-        }
-
-        // Checksum
-        if (payload.length() > 256) {
-            throw new UnsupportedOperationException("Length is too long");
-        }
-        packet.add((byte) payload.length());
-
+    public ControlPacket getPacket() {
+        ControlPacket p = new ControlPacket(this.currentMode, this.subMode, this.direction);
         this.onAfterSend();
-        return (Byte[]) packet.toArray();
+        return p;
     }
 
     private void onAfterSend() {
