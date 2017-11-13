@@ -1,11 +1,9 @@
 package com.example.ahmed.vorpalhexapodcontroller;
 
-import android.app.Activity;
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,34 +26,29 @@ import java.util.Hashtable;
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
- * {@link RobotControlFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
+ * <p>
  * Use the {@link RobotControlFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
 public class RobotControlFragment extends Fragment implements View.OnClickListener {
-    private OnFragmentInteractionListener mListener;
+
     // W (walk) Low Step | High Step | Small Step | Scamper
     // D (dance) Freestyle | Ballet | Waves | Hands
     // F (fight) Front Legs | Front Legs, Unison | Swivel | Lean
     private Controller motionController;
-    private static final String NO_ASCII_ENCODING_ERR = "Couldn't find ASCII encoding, packet creation will fail";
-    private Activity parentActivity;
+    private FragmentActivity parentView;
+
+    static final Hashtable<Mode, String[]> modeTexts = new Hashtable<>();
+
+    static {
+        modeTexts.put(Mode.Walk, new String[]{"Forward", "Backward", "Left", "Right"});
+    }
 
     public RobotControlFragment() {
         // Required empty public constructor
         motionController = new Controller();
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment RobotControlFragment.
-     */
-    // TODO: Rename and change types and number of parameters
     public static RobotControlFragment newInstance(String param1, String param2) {
         RobotControlFragment fragment = new RobotControlFragment();
         Bundle args = new Bundle();
@@ -71,7 +64,7 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        parentActivity = this.getActivity();
+        parentView = this.getActivity();
 
         this.hookModesToRadios();
 
@@ -90,19 +83,6 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
 
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
 
     @Override
     public void onClick(View v) {
@@ -114,23 +94,8 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
                 show();
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
-    }
-
     private void hookDirectionsToButtons() {
-        ViewGroup buttonLayout = getView().findViewById(R.id.dPadButtonConstraintLayout);
+        ViewGroup buttonLayout = this.parentView.findViewById(R.id.dPadButtonConstraintLayout);
         // Set the click listeners of motion buttons
         for (int i = 0; i < buttonLayout.getChildCount(); i++) {
             Button b = (Button) buttonLayout.getChildAt(i);
@@ -160,7 +125,7 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
     }
 
     private void hookModesToRadios() {
-        ViewGroup radioLayout = getView().findViewById(R.id.modesRdioGroup);
+        ViewGroup radioLayout = this.parentView.findViewById(R.id.modesRdioGroup);
 
         for (int i = 0; i < radioLayout.getChildCount(); i++) {
 
@@ -188,7 +153,7 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
     }
 
     private void hookSubModesToSpinner() {
-        final Spinner spinnerSubModes = this.getActivity().findViewById(R.id.spinnerSubMode);
+        final Spinner spinnerSubModes = this.parentView.findViewById(R.id.spinnerSubMode);
 
         SpinnerSubModeItem[] subModeItems = {
                 new SpinnerSubModeItem("Low Step", SubMode.One),
@@ -210,9 +175,6 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 SpinnerSubModeItem item = (SpinnerSubModeItem) parent.getItemAtPosition(position);
                 motionController.setSubMode(item.getSubMode());
-
-                // TODO: Change text on motion buttons
-                Toast.makeText(parentActivity, item.toString(), Toast.LENGTH_SHORT).show();
                 updateButtonTexts();
             }
         });
@@ -227,11 +189,5 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
 //        final Mode mode = motionController.getCurrentMode();
 //        final Spinner spinnerSubModes = this.getActivity().findViewById(R.id.spinnerSubMode);
 
-    }
-
-    static final Hashtable<Mode, String[]> modeTexts = new Hashtable<>();
-
-    static {
-        modeTexts.put(Mode.Walk, new String[]{"Forward", "Backward", "Left", "Right"});
     }
 }

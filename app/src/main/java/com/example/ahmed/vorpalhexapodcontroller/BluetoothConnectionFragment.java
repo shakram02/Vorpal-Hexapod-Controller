@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,7 +30,7 @@ import java.util.Set;
  * to handle interaction events.
  * Use the {@link BluetoothConnectionFragment#newInstance} factory method to
  * create an instance of this fragment.
- *
+ * <p>
  * After pressing one button on the
  * left, you stay in that mode until a different mode button is pressed. You
  * don't have to keep holding them.
@@ -87,6 +88,11 @@ public class BluetoothConnectionFragment extends Fragment {
         if (context instanceof OnFragmentInteractionListener) {
             mListener = (OnFragmentInteractionListener) context;
         }
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         mBluetoothStatus = getView().findViewById(R.id.bluetoothStatus);
         mReadBuffer = getView().findViewById(R.id.readBuffer);
