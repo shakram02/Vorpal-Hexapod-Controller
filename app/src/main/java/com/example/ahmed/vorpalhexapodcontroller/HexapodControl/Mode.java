@@ -6,7 +6,7 @@ package com.example.ahmed.vorpalhexapodcontroller.HexapodControl;
  * Mode for the hexa pod W, D, F for "walk", "dance", "fight"
  */
 
-enum Mode {
+public enum Mode {
     Walk,
     Dance,
     Fight;
