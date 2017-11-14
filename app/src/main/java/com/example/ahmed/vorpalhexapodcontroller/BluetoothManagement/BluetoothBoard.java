@@ -51,13 +51,13 @@ public class BluetoothBoard extends Thread implements Closeable, Sender {
 
     public void send(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(b);
+            sb.append(" ");
+        }
+
         try {
-            for (byte b : bytes) {
-                sb.append(b);
-                sb.append(" ");
-                // Poor board can't handle big chunks of data
-                mmOutStream.write(b);
-            }
+            mmOutStream.write(bytes);
         } catch (IOException e) {
             Log.e(getClass().getName(), e.toString());
         }
