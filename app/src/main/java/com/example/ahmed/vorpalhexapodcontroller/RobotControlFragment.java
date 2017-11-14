@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,17 +21,15 @@ import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.Controller;
 import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.DpadDirection;
 import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.Mode;
 import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.SubMode;
+import com.example.ahmed.vorpalhexapodcontroller.UiHelpers.RepeatListener;
 import com.example.ahmed.vorpalhexapodcontroller.UiHelpers.SpinnerSubModeItem;
 
+import java.io.IOException;
 import java.util.Hashtable;
 
 
 /**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * <p>
- * Use the {@link RobotControlFragment#newInstance} factory method to
- * create an instance of this fragment.
+ *
  */
 public class RobotControlFragment extends Fragment implements View.OnClickListener {
 
@@ -40,7 +39,8 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
     private Controller motionController;
     private FragmentActivity parentView;
     private Sender bluetoothSender;
-
+    private static final int TOUCH_DELAY_MS = 200;
+    private static final int BEFORE_REPEAT_DELAY_MS = 400;
     static final Hashtable<Mode, String[]> modeTexts = new Hashtable<>();
 
     static {
@@ -75,12 +75,24 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
         this.updateButtonTexts();
     }
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_robot_control, container, false);
 
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        try {
+            bluetoothSender.close();
+            Log.d(getClass().getSimpleName(), "Bluetooth connection closed");
+        } catch (IOException e) {
+            Log.e(getClass().getSimpleName(), e.getMessage());
+        }
     }
 
     @Override
@@ -98,10 +110,11 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
 
     private void hookDirectionsToButtons() {
         ViewGroup buttonLayout = this.parentView.findViewById(R.id.dPadButtonConstraintLayout);
+        RepeatListener listener = new RepeatListener(BEFORE_REPEAT_DELAY_MS, TOUCH_DELAY_MS, this);
         // Set the click listeners of motion buttons
         for (int i = 0; i < buttonLayout.getChildCount(); i++) {
             Button b = (Button) buttonLayout.getChildAt(i);
-            b.setOnClickListener(this);
+            b.setOnTouchListener(listener);
 
             switch (b.getId()) {
                 case R.id.btnBack:

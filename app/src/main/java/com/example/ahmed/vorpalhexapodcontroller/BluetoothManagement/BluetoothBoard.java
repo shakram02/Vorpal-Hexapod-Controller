@@ -51,17 +51,19 @@ public class BluetoothBoard extends Thread implements Closeable, Sender {
 
     public void send(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(b);
-            sb.append(" ");
-        }
-        Log.i(getClass().getSimpleName(), "OnWire:" + sb.toString());
-
         try {
-            mmOutStream.write(bytes);
+            for (byte b : bytes) {
+                sb.append(b);
+                sb.append(" ");
+                // Poor board can't handle big chunks of data
+                mmOutStream.write(b);
+            }
         } catch (IOException e) {
             Log.e(getClass().getName(), e.toString());
         }
+
+        Log.i(getClass().getSimpleName(), "OnWire:" + sb.toString());
+        SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
     }
 
     /* Call this from the main activity to send data to the remote device */

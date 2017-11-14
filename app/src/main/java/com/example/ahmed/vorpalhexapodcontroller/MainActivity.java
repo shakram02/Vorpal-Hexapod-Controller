@@ -1,6 +1,7 @@
 package com.example.ahmed.vorpalhexapodcontroller;
 
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Button;
 
@@ -27,48 +28,38 @@ public class MainActivity extends AppCompatActivity implements BluetoothConnecti
 
         bluetoothConnectionFragment = BluetoothConnectionFragment.newInstance();
         bluetoothConnectionFragment.setArguments(getIntent().getExtras());
-        Button switcher = findViewById(R.id.btnSwitchFragment);
-
-        switcher.setOnClickListener(v -> {
-            if (counter++ % 2 == 0) {
-                loadBluetoothController();
-            } else {
-                loadRobotController();
-            }
-        });
-
-        this.loadBluetoothController();
+        this.loadFragment(bluetoothConnectionFragment);
     }
 
     @Override
     public void onFragmentInteraction(Sender sender) {
         robotControlFragment.setSenderDevice(sender);
-        loadRobotController();
+        loadFragment(robotControlFragment);
     }
 
-    private void loadRobotController() {
-        if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) {
-            getSupportFragmentManager()
-                    .beginTransaction().
-                    remove(getSupportFragmentManager().findFragmentById(R.id.fragment_container)).commit();
-        }
+    private void loadFragment(Fragment fragment) {
+        // Remove the existing fragment from view
+//        if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) {
+//            getSupportFragmentManager()
+//                    .beginTransaction().
+//                    remove(getSupportFragmentManager().findFragmentById(R.id.fragment_container)).commit();
+//        }
 
+//        if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+//            // Add the first fragment without adding it to back stack, so pressing back now exits
+//            getSupportFragmentManager()
+//                    .beginTransaction()
+//                    .add(R.id.fragment_container, fragment)
+//                    .commit();
+//        } else {
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_container, robotControlFragment)
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(fragment.getClass().getSimpleName())
                 .commit();
-    }
+//        }
 
-    private void loadBluetoothController() {
-        if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) {
-            getSupportFragmentManager()
-                    .beginTransaction().
-                    remove(getSupportFragmentManager().findFragmentById(R.id.fragment_container)).commit();
-        }
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragment_container, bluetoothConnectionFragment)
-                .commit();
+
     }
 
 }
