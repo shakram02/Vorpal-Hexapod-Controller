@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements BluetoothConnecti
             return;
         }
 
-        robotControlFragment = RobotControlFragment.newInstance("x", "y");
+        robotControlFragment = new RobotControlFragment();
         robotControlFragment.setArguments(getIntent().getExtras());
 
         bluetoothConnectionFragment = BluetoothConnectionFragment.newInstance();

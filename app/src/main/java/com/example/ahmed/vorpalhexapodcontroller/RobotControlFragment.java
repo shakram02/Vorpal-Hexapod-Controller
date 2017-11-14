@@ -40,6 +40,7 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
     private Controller motionController;
     private FragmentActivity parentView;
     private Sender bluetoothSender;
+
     static final Hashtable<Mode, String[]> modeTexts = new Hashtable<>();
 
     static {
@@ -51,11 +52,8 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
         motionController = new Controller();
     }
 
-    public static RobotControlFragment newInstance(String param1, String param2) {
-        RobotControlFragment fragment = new RobotControlFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
+    public void setSenderDevice(Sender bluetoothSender) {
+        this.bluetoothSender = bluetoothSender;
     }
 
     @Override
@@ -83,10 +81,6 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_robot_control, container, false);
 
-    }
-
-    public void setSenderDevice(Sender bluetoothSender) {
-        this.bluetoothSender = bluetoothSender;
     }
 
     @Override
