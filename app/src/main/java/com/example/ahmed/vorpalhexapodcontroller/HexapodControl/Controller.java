@@ -38,7 +38,6 @@ public class Controller {
     }
 
     public ControlPacket getPacket() {
-        Log.d(getClass().getSimpleName(), String.format("%s | %s | %s ", this.currentMode, this.subMode, this.direction));
         return new ControlPacket(this.currentMode, this.subMode, this.direction);
     }
 }

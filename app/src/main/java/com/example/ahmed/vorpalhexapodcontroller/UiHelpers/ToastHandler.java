@@ -2,6 +2,7 @@ package com.example.ahmed.vorpalhexapodcontroller.UiHelpers;
 
 import android.content.Context;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -74,6 +75,7 @@ public class ToastHandler {
     }
 
     public void threadErrorToast(final Thread thread, final Throwable exc) {
+        Log.e(getClass().getSimpleName(), String.format("Thread {%s} threw an exception: %s", thread.toString(), exc));
         this.showToast(exc.getMessage(), Toast.LENGTH_LONG);
     }
 }
