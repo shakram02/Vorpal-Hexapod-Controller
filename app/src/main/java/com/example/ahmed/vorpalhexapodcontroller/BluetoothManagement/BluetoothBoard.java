@@ -9,17 +9,21 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by ahmed on 11/12/17.
+ * <p>
+ * Software representation for a connected bluetooth device
  */
-public class BluetoothBoard extends Thread implements Closeable {
+public class BluetoothBoard extends Thread implements Closeable, Sender {
     private final BluetoothSocket boardSocket;
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
-    private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
+    // TODO: change the UUID to something dynamic ?
+    private static final UUID BT_MODULE_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
+    private final LinkedBlockingQueue<Byte[]> receivedMessagesQueue;
 
     public BluetoothBoard(BluetoothDevice device) throws IOException {
         boardSocket = createBluetoothSocket(device);
@@ -29,40 +33,70 @@ public class BluetoothBoard extends Thread implements Closeable {
         // member streams are final
         mmInStream = boardSocket.getInputStream();
         mmOutStream = boardSocket.getOutputStream();
-
-        this.send("HELLO!!");
+        receivedMessagesQueue = new LinkedBlockingQueue<>();
+        // TODO Create receiver thread
     }
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         try {
-            final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", UUID.class);
-            return (BluetoothSocket) m.invoke(device, BTMODULEUUID);
+            return device.createInsecureRfcommSocketToServiceRecord(BT_MODULE_UUID);
         } catch (Exception e) {
             Log.e(getClass().getName(), "Could not create Insecure RFComm Connection", e);
         }
-        return device.createRfcommSocketToServiceRecord(BTMODULEUUID);
+        return device.createRfcommSocketToServiceRecord(BT_MODULE_UUID);
     }
 
+    public void send(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(b);
+            sb.append(" ");
+        }
+        Log.i(getClass().getSimpleName(), "OnWire:" + sb.toString());
+
+        try {
+            mmOutStream.write(bytes);
+        } catch (IOException e) {
+            Log.e(getClass().getName(), e.toString());
+        }
+    }
+
+    /* Call this from the main activity to send data to the remote device */
+    public void send(Byte[] data) {
+
+        byte[] bytes = new byte[data.length];
+
+        for (int i = 0; i < data.length; i++) {
+            bytes[i] = data[i];
+        }
+
+        this.send(bytes);
+    }
 
     public void run() {
         byte[] buffer;
-        int bytes;
+        int byteCount;
 
         // Keep listening to the InputStream until an exception occurs
         while (true) {
 
             // Read from the InputStream
             try {
-                bytes = mmInStream.available();
-                if (bytes == 0) {
+                byteCount = mmInStream.available();
+                if (byteCount == 0) {
                     continue;
                 }
 
-                buffer = new byte[1024];
-                SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
-                bytes = mmInStream.available(); // how many bytes are ready to be read?
-                bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
-                //TODO: message received
+//                SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
+                byteCount = mmInStream.available(); // how many bytes are ready to be read?
+                buffer = new byte[byteCount];
+                byteCount = mmInStream.read(buffer, 0, byteCount); // record how many bytes we actually read
+
+                Byte[] data = new Byte[byteCount];
+                for (int i = 0; i < byteCount; i++) {
+                    data[i] = buffer[i];
+                }
+                receivedMessagesQueue.add(data);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -71,20 +105,20 @@ public class BluetoothBoard extends Thread implements Closeable {
 
     }
 
-    /* Call this from the main activity to send data to the remote device */
-    public void send(String input) {
-        byte[] bytes = input.getBytes();           //converts entered String into bytes
+
+    public Byte[] getMessage() {
         try {
-            mmOutStream.write(bytes);
-        } catch (IOException e) {
-            Log.e(getClass().getName(), e.toString());
+            return this.receivedMessagesQueue.take();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Couldn't take an item from message queue");
         }
     }
 
-    /* Call this from the main activity to shutdown the connection */
+    /**
+     * Stops receiving messages then closes the bluetooth socket
+     */
     public void close() {
         try {
-            // TODO: call this in onSuspend / onKill
             boardSocket.close();
         } catch (IOException e) {
             Log.e(getClass().getName(), e.toString());
