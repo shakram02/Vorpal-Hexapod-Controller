@@ -2,8 +2,15 @@ package com.example.ahmed.vorpalhexapodcontroller;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity {
+import com.example.ahmed.vorpalhexapodcontroller.BluetoothManagement.Sender;
+
+public class MainActivity extends AppCompatActivity implements BluetoothConnectionFragment.OnFragmentInteractionListener {
+
+    private RobotControlFragment robotControlFragment;
+    private BluetoothConnectionFragment bluetoothConnectionFragment;
+    private int counter = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -11,20 +18,57 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         getSupportActionBar().hide();
 
-        if (findViewById(R.id.fragment_container) == null || savedInstanceState != null) {
+        if (savedInstanceState != null) {
             return;
         }
 
-        // Create a new Fragment to be placed in the activity layout
-        RobotControlFragment firstFragment = RobotControlFragment.newInstance("x", "y");
+        robotControlFragment = RobotControlFragment.newInstance("x", "y");
+        robotControlFragment.setArguments(getIntent().getExtras());
 
-        // In case this activity was started with special instructions from an
-        // Intent, pass the Intent's extras to the fragment as arguments
-        firstFragment.setArguments(getIntent().getExtras());
+        bluetoothConnectionFragment = BluetoothConnectionFragment.newInstance();
+        bluetoothConnectionFragment.setArguments(getIntent().getExtras());
+        Button switcher = findViewById(R.id.btnSwitchFragment);
 
-        // Add the fragment to the 'fragment_container' FrameLayout
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragment_container, firstFragment).commit();
+        switcher.setOnClickListener(v -> {
+            if (counter++ % 2 == 0) {
+                loadBluetoothController();
+            } else {
+                loadRobotController();
+            }
+        });
+
+        this.loadBluetoothController();
+    }
+
+    @Override
+    public void onFragmentInteraction(Sender sender) {
+        robotControlFragment.setSenderDevice(sender);
+        loadRobotController();
+    }
+
+    private void loadRobotController() {
+        if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) {
+            getSupportFragmentManager()
+                    .beginTransaction().
+                    remove(getSupportFragmentManager().findFragmentById(R.id.fragment_container)).commit();
+        }
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, robotControlFragment)
+                .commit();
+    }
+
+    private void loadBluetoothController() {
+        if (getSupportFragmentManager().findFragmentById(R.id.fragment_container) != null) {
+            getSupportFragmentManager()
+                    .beginTransaction().
+                    remove(getSupportFragmentManager().findFragmentById(R.id.fragment_container)).commit();
+        }
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, bluetoothConnectionFragment)
+                .commit();
     }
 
 }

@@ -19,31 +19,34 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class BluetoothBoard extends Thread implements Closeable, Sender {
     private final BluetoothSocket boardSocket;
-    private final InputStream mmInStream;
-    private final OutputStream mmOutStream;
+    private InputStream mmInStream;
+    private OutputStream mmOutStream;
     // TODO: change the UUID to something dynamic ?
     private static final UUID BT_MODULE_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
     private final LinkedBlockingQueue<Byte[]> receivedMessagesQueue;
 
-    public BluetoothBoard(BluetoothDevice device) throws IOException {
+    public BluetoothBoard(BluetoothDevice device) {
         boardSocket = createBluetoothSocket(device);
+        receivedMessagesQueue = new LinkedBlockingQueue<>();
+        // TODO Create receiver thread
+    }
 
+    public void connect() throws IOException {
+        // TODO: this blocks
         boardSocket.connect();
         // Get the input and output streams, using temp objects because
         // member streams are final
         mmInStream = boardSocket.getInputStream();
         mmOutStream = boardSocket.getOutputStream();
-        receivedMessagesQueue = new LinkedBlockingQueue<>();
-        // TODO Create receiver thread
     }
 
-    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
+    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) {
         try {
-            return device.createInsecureRfcommSocketToServiceRecord(BT_MODULE_UUID);
+            return device.createRfcommSocketToServiceRecord(BT_MODULE_UUID);
         } catch (Exception e) {
             Log.e(getClass().getName(), "Could not create Insecure RFComm Connection", e);
+            throw new RuntimeException(e);
         }
-        return device.createRfcommSocketToServiceRecord(BT_MODULE_UUID);
     }
 
     public void send(byte[] bytes) {
@@ -77,11 +80,8 @@ public class BluetoothBoard extends Thread implements Closeable, Sender {
         byte[] buffer;
         int byteCount;
 
-        // Keep listening to the InputStream until an exception occurs
-        while (true) {
-
-            // Read from the InputStream
-            try {
+        try {
+            while (true) {
                 byteCount = mmInStream.available();
                 if (byteCount == 0) {
                     continue;
@@ -92,17 +92,24 @@ public class BluetoothBoard extends Thread implements Closeable, Sender {
                 buffer = new byte[byteCount];
                 byteCount = mmInStream.read(buffer, 0, byteCount); // record how many bytes we actually read
 
+                if (byteCount == -1) {
+                    close();
+                    return;
+                }
+
                 Byte[] data = new Byte[byteCount];
                 for (int i = 0; i < byteCount; i++) {
                     data[i] = buffer[i];
                 }
+
                 receivedMessagesQueue.add(data);
-
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        }
+        } catch (IOException e) {
+            e.printStackTrace();
 
+            // TODO: test exception execution path
+            throw new RuntimeException(e);
+        }
     }
 
 
