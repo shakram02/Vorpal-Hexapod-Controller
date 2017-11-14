@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,8 +13,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.Spinner;
-import android.widget.Toast;
 
+import com.example.ahmed.vorpalhexapodcontroller.BluetoothManagement.Sender;
+import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.ControlPacket;
 import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.Controller;
 import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.DpadDirection;
 import com.example.ahmed.vorpalhexapodcontroller.HexapodControl.Mode;
@@ -37,7 +39,7 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
     // F (fight) Front Legs | Front Legs, Unison | Swivel | Lean
     private Controller motionController;
     private FragmentActivity parentView;
-
+    private Sender bluetoothSender;
     static final Hashtable<Mode, String[]> modeTexts = new Hashtable<>();
 
     static {
@@ -65,7 +67,7 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         parentView = this.getActivity();
-
+        // TODO: check if we're in the correct view or not to avoid null pointer exceptions
         this.hookModesToRadios();
 
         this.hookSubModesToSpinner();
@@ -83,6 +85,9 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
 
     }
 
+    public void setSenderDevice(Sender bluetoothSender) {
+        this.bluetoothSender = bluetoothSender;
+    }
 
     @Override
     public void onClick(View v) {
@@ -90,8 +95,11 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
         DpadDirection direction = (DpadDirection) b.getTag();
         this.motionController.setDirection(direction);
 
-        Toast.makeText(getActivity(), this.motionController.getPacket().toString(), Toast.LENGTH_SHORT).
-                show();
+        // TODO: add packets to queue, keep sending on a background thread each 100ms.
+        // when the queue is empty a stop is sent
+        ControlPacket packet = this.motionController.getPacket();
+        Log.d(getClass().getSimpleName(), packet.toString());
+        this.bluetoothSender.send(packet.encode());
     }
 
     private void hookDirectionsToButtons() {
@@ -126,6 +134,10 @@ public class RobotControlFragment extends Fragment implements View.OnClickListen
 
     private void hookModesToRadios() {
         ViewGroup radioLayout = this.parentView.findViewById(R.id.modesRdioGroup);
+        // We're in another view, TODO: check why this throws a null pointer
+        if (radioLayout == null) {
+            return;
+        }
 
         for (int i = 0; i < radioLayout.getChildCount(); i++) {
 
