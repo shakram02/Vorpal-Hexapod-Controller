@@ -145,7 +145,9 @@ public class BluetoothConnectionFragment extends Fragment {
         }
 
         if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-            Toast.makeText(getContext(), "I won't be able to find unpaired devices", Toast.LENGTH_LONG).show();
+            toastHandler.showToast("I won't be able to find unpaired devices",
+                    Toast.LENGTH_LONG);
+
             mDiscoverBtn.setEnabled(false);
             mDiscoverBtn.setText(R.string.btn_txt_location_needed);
         }
@@ -157,9 +159,8 @@ public class BluetoothConnectionFragment extends Fragment {
         if (mBTAdapter == null) {
             // TODO: better show a message
             // Device does not support Bluetooth
-            Toast.makeText(parentActivity,
-                    "Bluetooth device not found, exiting...",
-                    Toast.LENGTH_SHORT).show();
+            toastHandler.showToast("Bluetooth device not found, exiting...",
+                    Toast.LENGTH_SHORT);
             this.parentActivity.finish();
         }
     }
@@ -186,10 +187,10 @@ public class BluetoothConnectionFragment extends Fragment {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             mBluetoothStatus.setText("Bluetooth enabled");
-            Toast.makeText(this.parentActivity, "Bluetooth turned on", Toast.LENGTH_SHORT).show();
+            toastHandler.showToast("Bluetooth turned on", Toast.LENGTH_SHORT);
 
         } else {
-            Toast.makeText(this.parentActivity, "Bluetooth is already on", Toast.LENGTH_SHORT).show();
+            toastHandler.showToast("Bluetooth is already on", Toast.LENGTH_SHORT);
         }
     }
 
@@ -232,54 +233,58 @@ public class BluetoothConnectionFragment extends Fragment {
     private void bluetoothOff(View view) {
         mBTAdapter.disable(); // turn off
         mBluetoothStatus.setText("Bluetooth disabled");
-        Toast.makeText(this.parentActivity, "Bluetooth turned Off", Toast.LENGTH_SHORT).show();
+        toastHandler.showToast("Bluetooth turned Off", Toast.LENGTH_SHORT);
     }
 
     private void discover(View view) {
-        // Check if the device is already discovering
-        if (mBTAdapter.isDiscovering()) {
-            mBTAdapter.cancelDiscovery();
-            Toast.makeText(this.parentActivity, "Discovery stopped", Toast.LENGTH_SHORT).show();
-        } else {
-            if (mBTAdapter.isEnabled()) {
-                btDeviceListAdapter.clear(); // clear items
-                mBTAdapter.startDiscovery();
-                Toast.makeText(this.parentActivity, "Discovery started", Toast.LENGTH_SHORT).show();
-
-                this.blReceiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        String action = intent.getAction();
-                        if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                            BluetoothDevice device = intent.getParcelableExtra(android.bluetooth.BluetoothDevice.EXTRA_DEVICE);
-                            // add the name to the list
-                            btDeviceListAdapter.add(new SimpleBluetoothDevice(device));
-                            btDeviceListAdapter.notifyDataSetChanged();
-                            Toast.makeText(parentActivity, "Device Found", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(parentActivity, "No devices found", Toast.LENGTH_SHORT).show();
-                            throw new RuntimeException("No devices found");
-                        }
-                    }
-                };
-
-                parentActivity.registerReceiver(blReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
-                discoveryReceiverRegistered = true;
-
-            } else {
-                Toast.makeText(this.getContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
-            }
+        if (!mBTAdapter.isEnabled()) {
+            toastHandler.showToast("Bluetooth not on", Toast.LENGTH_SHORT);
+            return;
         }
+        // Check if the device is already discovering
+        else if (mBTAdapter.isDiscovering()) {
+            mBTAdapter.cancelDiscovery();
+            toastHandler.showToast("Discovery stopped", Toast.LENGTH_SHORT);
+            return;
+        }
+
+
+        btDeviceListAdapter.clear();
+        mBTAdapter.startDiscovery();
+        toastHandler.showToast("Discovery started", Toast.LENGTH_SHORT);
+
+        // Setup a broadcast receiver
+        this.blReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                if (!BluetoothDevice.ACTION_FOUND.equals(intent.getAction())) {
+                    toastHandler.showToast("No devices found", Toast.LENGTH_SHORT);
+                    return;
+                }
+
+                BluetoothDevice device = intent.getParcelableExtra(android.bluetooth.BluetoothDevice.EXTRA_DEVICE);
+                // add the name to the list
+                btDeviceListAdapter.add(new SimpleBluetoothDevice(device));
+                btDeviceListAdapter.notifyDataSetChanged();
+                toastHandler.showToast("Device Found", Toast.LENGTH_SHORT);
+            }
+        };
+
+
+        parentActivity.registerReceiver(blReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+        discoveryReceiverRegistered = true;
     }
 
 
     private void listPairedDevices(View view) {
-        mPairedDevices = mBTAdapter.getBondedDevices();
         if (!mBTAdapter.isEnabled()) {
-            Toast.makeText(this.parentActivity, "Bluetooth not on", Toast.LENGTH_SHORT).show();
+            toastHandler.showToast("Bluetooth not on", Toast.LENGTH_SHORT);
             return;
         }
 
+        // No devices will be returned if the bluetooth isn't on
+        mPairedDevices = mBTAdapter.getBondedDevices();
         btDeviceListAdapter.clear();
 
         // put it's one to the adapter
@@ -293,7 +298,7 @@ public class BluetoothConnectionFragment extends Fragment {
         public void onItemClick(AdapterView<?> av, View v, int position, long id) {
 
             if (!mBTAdapter.isEnabled()) {
-                Toast.makeText(parentActivity, "Bluetooth not on", Toast.LENGTH_SHORT).show();
+                toastHandler.showToast("Bluetooth not on", Toast.LENGTH_SHORT);
                 return;
             }
 
