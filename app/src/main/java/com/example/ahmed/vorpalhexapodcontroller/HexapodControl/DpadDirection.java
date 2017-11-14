@@ -14,6 +14,25 @@ public enum DpadDirection {
     Stop,
     Left;
 
+    public DpadDirection copy() {
+        switch (this) {
+            case Special:
+                return Special;
+            case Forward:
+                return Forward;
+            case Backward:
+                return Backward;
+            case Right:
+                return Right;
+            case Left:
+                return Left;
+            case Stop:
+                return Stop;
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
     @Override
     public String toString() {
         switch (this) {

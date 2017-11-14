@@ -6,7 +6,7 @@ package com.example.ahmed.vorpalhexapodcontroller.HexapodControl;
  * Mode for the hexa pod W, D, F for "walk", "dance", "fight"
  */
 
-public enum Mode {
+public enum Mode implements Cloneable {
     Walk,
     Dance,
     Fight;
@@ -20,6 +20,19 @@ public enum Mode {
                 return "D";
             case Fight:
                 return "F";
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
+    public Mode copy() {
+        switch (this) {
+            case Walk:
+                return Walk;
+            case Dance:
+                return Dance;
+            case Fight:
+                return Fight;
             default:
                 throw new IllegalStateException();
         }

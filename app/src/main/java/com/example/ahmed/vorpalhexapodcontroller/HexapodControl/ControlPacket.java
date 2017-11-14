@@ -2,7 +2,11 @@ package com.example.ahmed.vorpalhexapodcontroller.HexapodControl;
 
 import android.util.Log;
 
+import com.example.ahmed.vorpalhexapodcontroller.BluetoothManagement.Encodable;
+
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 /**
@@ -32,20 +36,21 @@ import java.util.ArrayList;
  * There may be several of these concatenated in order to move different groups of legs
  * to different positions in a single packet.
  */
-public class ControlPacket {
-    private Mode mode;
-    private SubMode subMode;
-    private DpadDirection dpadDirection;
+public class ControlPacket implements Encodable {
+    private final Mode mode;
+    private final SubMode subMode;
+    private final DpadDirection dpadDirection;
     private static final String PACKET_CHARSET = "UTF-8";
     private static final String PACKET_HEADER = "V1";
 
-    public ControlPacket(Mode mode, SubMode subMode, DpadDirection dpadDirection) {
-        this.mode = mode;
-        this.subMode = subMode;
-        this.dpadDirection = dpadDirection;
+    ControlPacket(final Mode mode, final SubMode subMode, final DpadDirection dpadDirection) {
+        // Node that we need to get a copy
+        this.mode = mode.copy();
+        this.subMode = subMode.copy();
+        this.dpadDirection = dpadDirection.copy();
     }
 
-    public Byte[] encode() throws UnsupportedEncodingException {
+    public Byte[] encode() {
 
         String payload = this.mode.toString()
                 + this.subMode.toString()
@@ -54,12 +59,18 @@ public class ControlPacket {
 
         ArrayList<Byte> packet = new ArrayList<>();
 
-        packet.addAll(this.encodeHeader());
-        packet.add(((byte) payload.length()));
-        packet.addAll(this.encodePayload(payload));
-        packet.add(this.encodeChecksum(payload));
+        try {
+            packet.addAll(this.encodeHeader());
+            packet.add(((byte) (payload.length() & 0xFF)));
+            packet.addAll(this.encodePayload(payload));
+            packet.add(this.encodeChecksum(payload));
+        } catch (UnsupportedEncodingException exc) {
+            throw new RuntimeException(exc);
+        }
 
-        return (Byte[]) packet.toArray();
+        Byte[] result = new Byte[packet.size()];
+        packet.toArray(result);
+        return result;
     }
 
     private ArrayList<Byte> encodeHeader() throws UnsupportedEncodingException {
@@ -83,13 +94,14 @@ public class ControlPacket {
     }
 
     private Byte encodeChecksum(String payload) {
-        // Checksum
-        // TODO: Byte here is unsigned, we might need to do some bit games? (to extract length)
-        if (payload.length() > 255) {
-            throw new UnsupportedOperationException("Length is too long");
+        // Checksum = (length + sum of data) % 256
+
+        int checksum = payload.length();
+        for (byte b : payload.getBytes()) {
+            checksum += b;
         }
 
-        return (byte) payload.length();
+        return (byte) ((checksum % 256));
     }
 
     @Override

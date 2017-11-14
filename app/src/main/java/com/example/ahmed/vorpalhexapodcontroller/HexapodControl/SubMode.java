@@ -30,4 +30,19 @@ public enum SubMode {
                 throw new IllegalStateException();
         }
     }
+
+    public SubMode copy() {
+        switch (this) {
+            case One:
+                return One;
+            case Two:
+                return Two;
+            case Three:
+                return Three;
+            case Four:
+                return Four;
+            default:
+                throw new IllegalStateException();
+        }
+    }
 }
